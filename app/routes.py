@@ -191,9 +191,9 @@ def movie_page(Rank,username):
     ratings_reviews = RatingReview.query.filter_by(movie_rank=movie.Rank).all()
     if movie is None:
         abort(404)
-    trailer_video_id = get_trailer(movie.Title)
+    #trailer_video_id = get_trailer(movie.Title)
     playlists = Playlist.query.filter_by(username=username).all()
-    return render_template('movie.html', movie=movie, username=username,ratings_reviews=ratings_reviews, trailer_video_id=trailer_video_id, playlists=playlists)
+    return render_template('movie.html', movie=movie, username=username,ratings_reviews=ratings_reviews, playlists=playlists)
 
 
 def get_trailer(movie_title):

@@ -82,13 +82,7 @@
 <body>
 <div class="container">
     <h1>{{ movie.Title }}</h1>
-    {% if trailer_video_id %}
-    <div class="trailer">
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/{{ trailer_video_id }}" frameborder="0" allowfullscreen></iframe>
-    </div>
-    {% else %}
-    <p>No trailer available.</p>
-    {% endif %}
+
     <ul class="movie-details">
         <li class="movie-item">
             <div class="movie-info">
