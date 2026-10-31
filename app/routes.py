@@ -1,5 +1,6 @@
 import os
 from app import app, db
+from app.auth import hash_secret, verify_secret
 from flask import render_template, request, redirect, url_for,flash,session,jsonify,abort
 from app.models import User, Movie_Data, Wishlist, UserPreferences, RatingReview, hall, Friendship,Hall_Details, Seat, SoldTicket, Voucher, user_vouchers, Playlist, PlaylistItem
 from sqlalchemy.sql import text,or_,func,desc
@@ -19,7 +20,7 @@ def signup():
         password = request.form['password']
         security_answer=request.form['security_answer']
         # Create a new user object and add it to the database
-        new_user = User(username=username, email=email, password=password,security_answer=security_answer)
+        new_user = User(username=username, email=email, password=hash_secret(password),security_answer=hash_secret(security_answer))
         db.session.add(new_user)
         db.session.commit()
         session['username'] = username
@@ -53,7 +54,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        if user and user.password == password:
+        if user and verify_secret(user, 'password', password):
             # Authentication successful, store user id in session
             session['username'] = user.username
             return redirect(url_for('dashboard', username=user.username))
@@ -66,8 +67,8 @@ def forgot_password():
     if request.method == 'POST':
         username = request.form['username']
         security_answer = request.form['security_answer']
-        user = User.query.filter_by(username=username, security_answer=security_answer).first()
-        if user:
+        user = User.query.filter_by(username=username).first()
+        if user and verify_secret(user, 'security_answer', security_answer):
             # Implement password reset logic
             return redirect(url_for('dashboard', username=user.username))  # Pass the username to the dashboard route
             
