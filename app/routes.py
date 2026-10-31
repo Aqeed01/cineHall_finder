@@ -1,3 +1,4 @@
+import os
 from app import app, db
 from flask import render_template, request, redirect, url_for,flash,session,jsonify,abort
 from app.models import User, Movie_Data, Wishlist, UserPreferences, RatingReview, hall, Friendship,Hall_Details, Seat, SoldTicket, Voucher, user_vouchers, Playlist, PlaylistItem
@@ -197,7 +198,7 @@ def movie_page(Rank,username):
 
 
 def get_trailer(movie_title):
-    api_key = 'AIzaSyDrhXeRaiBtJHS_VKbBzEX3tbnd9JwXEyU'
+    api_key = os.environ.get('YOUTUBE_API_KEY')
     youtube = build('youtube', 'v3', developerKey=api_key)
     search_response = youtube.search().list(
         q=movie_title + " trailer",
