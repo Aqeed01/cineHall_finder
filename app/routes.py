@@ -2,10 +2,20 @@ import os
 from app import app, db
 from app.auth import hash_secret, verify_secret
 from flask import render_template, request, redirect, url_for,flash,session,jsonify,abort
+from urllib.parse import urlparse
 from app.models import User, Movie_Data, Wishlist, UserPreferences, RatingReview, hall, Friendship,Hall_Details, Seat, SoldTicket, Voucher, user_vouchers, Playlist, PlaylistItem
 from sqlalchemy.sql import text,or_,func,desc
 from math import ceil 
 from googleapiclient.discovery import build
+
+
+@app.before_request
+def refuse_cross_site_posts():
+    """A form post that names another website as its origin is a forged request."""
+    if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
+        origin = request.headers.get('Origin') or request.headers.get('Referer')
+        if origin and urlparse(origin).netloc != request.host:
+            abort(403)
 
 
 PUBLIC_ENDPOINTS = {'index', 'signup', 'login', 'forgot_password', 'logout', 'static'}
@@ -92,17 +102,28 @@ def login():
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
+        if request.form.get('step') == 'reset':
+            reset_user = session.get('reset_user')
+            new_password = request.form.get('new_password', '')
+            user = User.query.filter_by(username=reset_user).first() if reset_user else None
+            if user is None or not new_password:
+                flash('Please start again and answer your security question first.', 'error')
+                session.pop('reset_user', None)
+                return render_template('forgot_password.html', reset=False)
+            user.password = hash_secret(new_password)
+            db.session.commit()
+            session.pop('reset_user', None)
+            flash('Password updated. Please log in with your new password.', 'error')
+            return redirect(url_for('login'))
         username = request.form['username']
         security_answer = request.form['security_answer']
         user = User.query.filter_by(username=username).first()
         if user and verify_secret(user, 'security_answer', security_answer):
-            # Implement password reset logic
-            session['username'] = user.username
-            return redirect(url_for('dashboard', username=user.username))  # Pass the username to the dashboard route
-            
-        else:
-            return "Invalid username or security answer."
-    return render_template('forgot_password.html')
+            session['reset_user'] = user.username
+            return render_template('forgot_password.html', reset=True)
+        flash('Invalid username or security answer.', 'error')
+        return render_template('forgot_password.html', reset=False)
+    return render_template('forgot_password.html', reset=False)
 
 ##################################################################
 @app.route('/dashboard/<username>', methods=['GET', 'POST'])
@@ -859,6 +880,8 @@ def playlists():
 def playlist_details(playlist_id):
     # Retrieve the playlist details and its associated movies
     playlist = Playlist.query.get_or_404(playlist_id)
+    if playlist.username != session.get('username'):
+        abort(403)
     movies = Movie_Data.query.join(PlaylistItem).filter(PlaylistItem.playlist_id == playlist_id).all()
     return render_template('playlist_details.html', playlist=playlist, movies=movies, username=session.get('username'))
 
@@ -881,6 +904,9 @@ def add_to_playlist():
     if playlist_id is None or movie_rank is None:
         # Handle error appropriately
         return "Error: Missing data"
+    playlist = Playlist.query.get_or_404(playlist_id)
+    if playlist.username != session.get('username'):
+        abort(403)
     playlist_item = PlaylistItem(playlist_id=playlist_id, movie_rank=movie_rank)
     db.session.add(playlist_item)
     db.session.commit()
