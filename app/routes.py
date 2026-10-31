@@ -8,6 +8,22 @@ from math import ceil
 from googleapiclient.discovery import build
 
 
+PUBLIC_ENDPOINTS = {'index', 'signup', 'login', 'forgot_password', 'logout', 'static'}
+
+
+@app.before_request
+def require_login():
+    """Pages other than the landing, sign-up, log-in and recovery pages need a signed-in user."""
+    if request.endpoint is None or request.endpoint in PUBLIC_ENDPOINTS:
+        return None
+    username = session.get('username')
+    if username and User.query.filter_by(username=username).first():
+        return None
+    session.pop('username', None)
+    flash('Please log in to continue.', 'error')
+    return redirect(url_for('login'))
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -70,6 +86,7 @@ def forgot_password():
         user = User.query.filter_by(username=username).first()
         if user and verify_secret(user, 'security_answer', security_answer):
             # Implement password reset logic
+            session['username'] = user.username
             return redirect(url_for('dashboard', username=user.username))  # Pass the username to the dashboard route
             
         else:
@@ -428,7 +445,7 @@ def buy_tickets(movie_title, username):
             # Redirect to the prepare_payment route with all data
             return redirect(url_for('prepare_payment', movie_title=movie_title, username=username, 
                                     selected_seats=selected_seat, format=request.form.get('format'),
-                                    time=request.form.get('time'), date=request.form.get('date')),ticket_price=request.form.get('ticket_price'))
+                                    time=request.form.get('time'), date=request.form.get('date'), ticket_price=request.form.get('ticket_price')))
         else:
             # Handle no seat selected case
             print("No seats selected")
@@ -441,6 +458,8 @@ def prepare_payment(movie_title, username):
     format = request.args.get('format')
     time = request.args.get('time')
     date = request.args.get('date')
+    if request.args.get('ticket_price') is None:
+        return redirect(url_for('current_movies', username=username))
     original_price = float(request.args.get('ticket_price'))
     ticket_price = float(request.args.get('ticket_price'))  # Convert ticket_price to float
     discounted_price = ticket_price  # Default to ticket_price

@@ -1,123 +1,143 @@
 {% extends 'base.html' %}
 
 {% block head %}
-<title>Theatre Website</title>
+<title>CineHall Finder</title>
 <style>
-    /* CSS for positioning the heading */
-    .heading-container {
-        text-align: center;
-        margin-top: -3cm; /* Adjust this value as needed */
-        margin-bottom: 20px;
-    }
-
-    /* CSS for positioning the buttons */
-    .btn-container {
-        text-align: center;
-        margin-top: 4cm; /* Adjust this value as needed */
-    }
-
-    /* CSS for the background image */
-    body {
-        background-image: url('/static/img1.jpg'); /* Set the background image */
-        background-size: cover;
-        background-position: center;
-    }
-
-    /* CSS for glowing effect */
-    .glow {
-        animation: glow 15s ease-in-out infinite alternate;
-        color: #31163d; /* Change text color to #884EA0 */
-    }
-
-    @keyframes glow {
-        from {
-            text-shadow: 0 0 10px #989599, 0 0 20px #989599, 0 0 30px#989599, 0 0 40px #989599, 0 0 50px #989599;
-        }
-        to {
-            text-shadow: 0 0 20px #cecccf, 0 0 30px  #cecccf, 0 0 40px #cecccf, 0 0 50px  #cecccf;
-        }
-    }
-
-    /* CSS for videos */
-    video {
-        width: 250px; /* Adjust width as needed */
-        height: 125px; /* Adjust height as needed */
-    }
-
-    /* CSS for buttons */
-    .btn {
-        font-size: 20px; /* Adjust font size as needed */
-        padding: 10px 20px; /* Adjust padding as needed */
-    }
-
     @font-face {
         font-family: myFont;
         src: url('/static/poster.ttf');
     }
 
-    .poster {
-        font-family: myFont;
-        font-size: 55px;
-        color: #31163d;
+    /* The poster collage, dimmed so the film reels and the heading read clearly */
+    body {
+        background-color: #14091f;
+        background-image: linear-gradient(to bottom, rgba(20, 9, 31, 0.72), rgba(39, 17, 65, 0.82)), url('/static/img1.jpg');
+        background-size: cover;
+        background-position: center;
+        overflow: hidden;
+    }
+
+    .hero {
+        position: relative;
+        z-index: 2;
+        max-width: 640px;
+        padding: 0 24px;
+        box-sizing: border-box;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .hero::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 900px;
+        height: 620px;
+        margin: -310px 0 0 -450px;
+        background: radial-gradient(ellipse at center, rgba(232, 161, 75, 0.16), rgba(232, 161, 75, 0) 65%);
+        z-index: -1;
+        pointer-events: none;
+    }
+    .hero h1 { margin: 0; font-family: myFont, Georgia, serif; font-weight: 400; color: #f3eaf8; animation: projector 5s ease-in-out infinite alternate; }
+    .hero .welcome { display: block; font-size: 44px; line-height: 1.1; letter-spacing: 0.06em; }
+    .hero .name { display: block; margin-top: 6px; font-size: 76px; line-height: 1; letter-spacing: 0.03em; }
+    .hero p { margin: 26px 0 0; max-width: 30em; font-family: system-ui, sans-serif; font-size: 19px; line-height: 1.55; color: #e3d4ee; }
+    .hero .btn-container { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+    .hero .btn { margin: 0; padding: 16px 34px; min-height: 52px; box-sizing: border-box; font-size: 19px; font-weight: 600; font-family: system-ui, sans-serif; background-color: #743497; border-radius: 6px; }
+    .hero .btn:hover { background-color: #8e4585; }
+    .hero .btn.alt { background: transparent; border: 2px solid #e9ddf2; color: #f3eaf8; padding: 14px 34px; }
+    .hero .btn.alt:hover { background: rgba(233, 221, 242, 0.14); }
+
+    @keyframes projector {
+        from { text-shadow: 0 0 14px rgba(232, 161, 75, 0.25), 0 0 40px rgba(142, 69, 133, 0.55); }
+        to { text-shadow: 0 0 22px rgba(232, 161, 75, 0.45), 0 0 60px rgba(142, 69, 133, 0.75); }
+    }
+
+    /* Film reels: two strips of poster stills with punched sprocket holes, scrolling in opposite directions */
+    .reel {
+        position: fixed;
+        top: 0;
+        width: 216px;
+        height: 100vh;
+        overflow: hidden;
+        background: #0b0810;
+        box-shadow: inset 0 0 0 1px #2a2133, 0 0 40px rgba(0, 0, 0, 0.55);
+        z-index: 1;
+    }
+    .reel-left { left: 44px; }
+    .reel-right { right: 44px; }
+    .reel::before, .reel::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        width: 216px;
+        height: 110px;
+        z-index: 2;
+        pointer-events: none;
+    }
+    .reel::before { top: 0; background: linear-gradient(to bottom, #0b0810, rgba(11, 8, 16, 0)); }
+    .reel::after { bottom: 0; background: linear-gradient(to top, #0b0810, rgba(11, 8, 16, 0)); }
+    .reel-track { will-change: transform; animation: reel-up 34s linear infinite; }
+    .reel-right .reel-track { animation-name: reel-down; animation-duration: 41s; }
+    @keyframes reel-up { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+    @keyframes reel-down { from { transform: translateY(-50%); } to { transform: translateY(0); } }
+    .reel-row { height: 128px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; box-sizing: border-box; }
+    .hole { display: block; width: 14px; height: 22px; border-radius: 4px; background: #e9ddf2; opacity: 0.85; }
+    .frame {
+        position: relative;
+        width: 148px;
+        height: 106px;
+        background-color: #1b1424;
+        background-image: url('/static/img1.jpg');
+        background-size: 1920px 1080px;
+        box-shadow: inset 0 0 0 2px #1b1424;
+    }
+    .frame::before { content: ""; position: absolute; inset: 0; background: #7a3b8c; opacity: 0.28; mix-blend-mode: multiply; }
+    .frame::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 22px rgba(11, 8, 16, 0.75); }
+
+    @media (prefers-reduced-motion: reduce) {
+        .reel-track, .hero h1 { animation: none; }
+    }
+    @media (max-width: 900px) {
+        .reel { display: none; }
+        .hero .welcome { font-size: 32px; }
+        .hero .name { font-size: 48px; }
     }
 </style>
 {% endblock %}
 
 {% block body %}
-<div class="heading-container">
-    <h1 class="glow poster">WELCOME to</h1>
-    <h1 class="glow poster">CINEHALL FINDER!</h1><br><br><br><br>
-</div>
-<div class="btn-container">
-    <a href="/signup" class="btn">Sign Up Here!</a>
-    <a href="/login" class="btn">Log In</a>
-</div>
-<div class="photo-container">
-    <div class="photo-left">
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    </div>
+{# Tiles of the poster collage (column, row; each tile is 140 x 200), cropped to a film frame #}
+{% set tiles = [[2,0],[3,0],[5,0],[10,0],[5,1],[6,1],[6,2],[7,2],[2,3],[4,4],[1,4],[10,3]] %}
+{% set tiles_right = tiles[5:] + tiles[:5] %}
 
-    
-    <div class="photo-right">
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        <video autoplay loop muted>
-            <source src="/static/video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+<div class="reel reel-left" aria-hidden="true">
+    <div class="reel-track">
+        {% for pass in range(2) %}{% for t in tiles %}
+        <div class="reel-row"><span class="hole"></span><div class="frame" style="background-position: -{{ t[0] * 140 + 4 }}px -{{ t[1] * 200 + 38 }}px"></div><span class="hole"></span></div>
+        {% endfor %}{% endfor %}
     </div>
 </div>
+
+<div class="reel reel-right" aria-hidden="true">
+    <div class="reel-track">
+        {% for pass in range(2) %}{% for t in tiles_right %}
+        <div class="reel-row"><span class="hole"></span><div class="frame" style="background-position: -{{ t[0] * 140 + 4 }}px -{{ t[1] * 200 + 38 }}px"></div><span class="hole"></span></div>
+        {% endfor %}{% endfor %}
+    </div>
+</div>
+
+<main class="hero">
+    <h1>
+        <span class="welcome">WELCOME to</span>
+        <span class="name">CINEHALL FINDER!</span>
+    </h1>
+    <p>Find movies and buy tickets from local theatres.</p>
+    <div class="btn-container">
+        <a href="/signup" class="btn">Sign Up Here!</a>
+        <a href="/login" class="btn alt">Log In</a>
+    </div>
+</main>
 {% endblock %}
