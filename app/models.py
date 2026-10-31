@@ -86,7 +86,7 @@ class RatingReview(db.Model):
 
 class hall(db.Model):
     __tablename__ = 'hall'
-    Movie_Title = db.Column(db.Text, primary_key=True)
+    Movie_Title = db.Column(db.String(255), primary_key=True)
     Theater = db.Column(db.Text)
     Location = db.Column(db.Text)
     Movie_time = db.Column(db.Text)
@@ -105,7 +105,7 @@ class hall(db.Model):
 
 class Seat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    movie_title = db.Column(db.Integer, db.ForeignKey('hall.Movie_Title'), nullable=False)
+    movie_title = db.Column(db.String(255), db.ForeignKey('hall.Movie_Title'), nullable=False)
     seat_number = db.Column(db.String(10), nullable=False)
     status = db.Column(db.String(10), nullable=False, default='available')  # 'available' or 'taken'
 
