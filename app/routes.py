@@ -18,6 +18,9 @@ def require_login():
         return None
     username = session.get('username')
     if username and User.query.filter_by(username=username).first():
+        url_username = (request.view_args or {}).get('username')
+        if url_username is not None and url_username != username:
+            abort(403)
         return None
     session.pop('username', None)
     flash('Please log in to continue.', 'error')
@@ -808,14 +811,18 @@ def remove_friend(friend_id):
 @app.route('/confirm_refund/<int:ticket_id>')
 def confirm_refund(ticket_id):
     ticket = SoldTicket.query.get_or_404(ticket_id)
+    if ticket.username != session.get('username'):
+        abort(403)
     movie = hall.query.filter_by(Movie_Title=ticket.movie_title).first()
     if not movie:
         abort(404)
-    return render_template('confirm_refund.html', ticket=ticket, movie=movie)
+    return render_template('confirm_refund.html', ticket=ticket, movie=movie, username=session.get('username'))
 
 @app.route('/process_refund/<int:ticket_id>', methods=['POST'])
 def process_refund(ticket_id):
     ticket = SoldTicket.query.get_or_404(ticket_id)
+    if ticket.username != session.get('username'):
+        abort(403)
     reason = request.form['reason']  # Retrieve the cancellation reason from the form
     # Log the reason or perform additional actions based on the reason here
 
@@ -846,14 +853,14 @@ def playlists():
     # Retrieve all playlists for the current user
     current_username = session.get('username')
     playlists = Playlist.query.filter_by(username=current_username).all()
-    return render_template('playlists.html', playlists=playlists)
+    return render_template('playlists.html', playlists=playlists, username=current_username)
 
 @app.route('/playlist/<int:playlist_id>')
 def playlist_details(playlist_id):
     # Retrieve the playlist details and its associated movies
     playlist = Playlist.query.get_or_404(playlist_id)
     movies = Movie_Data.query.join(PlaylistItem).filter(PlaylistItem.playlist_id == playlist_id).all()
-    return render_template('playlist_details.html', playlist=playlist, movies=movies)
+    return render_template('playlist_details.html', playlist=playlist, movies=movies, username=session.get('username'))
 
 
 @app.route('/create_playlist', methods=['POST'])
