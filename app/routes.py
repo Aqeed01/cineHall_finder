@@ -35,6 +35,14 @@ def signup():
         email = request.form['email']
         password = request.form['password']
         security_answer=request.form['security_answer']
+
+        if User.query.filter_by(username=username).first():
+            flash('That username is already taken. Please choose another.', 'error')
+            return render_template('signup.html')
+        if User.query.filter_by(email=email).first():
+            flash('An account with that email already exists. Try logging in.', 'error')
+            return render_template('signup.html')
+
         # Create a new user object and add it to the database
         new_user = User(username=username, email=email, password=hash_secret(password),security_answer=hash_secret(security_answer))
         db.session.add(new_user)

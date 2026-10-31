@@ -88,6 +88,13 @@
     <div class="signup-container">
         <div class="signup-info">
             <h1>Sign Up Here!</h1>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <ul style="list-style: none; margin: 0 0 14px; padding: 12px 14px; background: #f5e3e0; color: #5a2520; border-radius: 6px; font-weight: 600;">
+                {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+            {% endwith %}
             <form action="/signup" method="post" class="signup-form">
                 <label for="username">Username:</label><br>
                 <input type="text" id="username" name="username" required><br>
