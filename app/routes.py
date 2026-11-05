@@ -48,11 +48,18 @@ def signup():
         email = request.form['email']
         password = request.form['password']
         security_answer=request.form['security_answer']
+        username, email = username.strip(), email.strip()
 
-        if User.query.filter_by(username=username).first():
+        if not username or not email or not password or not security_answer.strip():
+            flash('Username, email, password and security answer are all required.', 'error')
+            return render_template('signup.html')
+        if len(username) > 80 or len(email) > 120 or len(password) > 200 or len(security_answer) > 200:
+            flash('One of the fields is too long.', 'error')
+            return render_template('signup.html')
+        if User.query.filter(db.func.lower(User.username) == username.lower()).first():
             flash('That username is already taken. Please choose another.', 'error')
             return render_template('signup.html')
-        if User.query.filter_by(email=email).first():
+        if User.query.filter(db.func.lower(User.email) == email.lower()).first():
             flash('An account with that email already exists. Try logging in.', 'error')
             return render_template('signup.html')
 
@@ -132,7 +139,7 @@ def dashboard(username):
     if user:
         user_info = {'username': user.username, 'email': user.email}
         # Fetch upcoming movies
-        query = text("SELECT Title, Description, Rank FROM Movie_Data WHERE Year = 2024 LIMIT 5")
+        query = text("SELECT Title, Description, `Rank` FROM Movie_Data WHERE Year = 2024 LIMIT 5")
         result = db.session.execute(query)
         upcoming_movies = result.fetchall()
         # Fetch user preferences
@@ -236,12 +243,12 @@ def wishlist_page(username):
 def movie_page(Rank,username):
     # Retrieve the movie details from the database based on the product ID
     username = session.get('username')
+    if not str(Rank).isdigit():
+        abort(404)
     movie = Movie_Data.query.filter_by(Rank=Rank).first()
-    #user = User.query.filter_by(username=username).first()
-    #username=user.username
-    ratings_reviews = RatingReview.query.filter_by(movie_rank=movie.Rank).all()
     if movie is None:
         abort(404)
+    ratings_reviews = RatingReview.query.filter_by(movie_rank=movie.Rank).all()
     #trailer_video_id = get_trailer(movie.Title)
     playlists = Playlist.query.filter_by(username=username).all()
     return render_template('movie.html', movie=movie, username=username,ratings_reviews=ratings_reviews, playlists=playlists)
@@ -282,6 +289,14 @@ def movie_rating_review(Rank):
             flash('User not found', 'error')
             return redirect(url_for('index'))
 
+        try:
+            rating = int(rating)
+        except (TypeError, ValueError):
+            rating = 0
+        if not 1 <= rating <= 10 or not str(Rank).isdigit() or not Movie_Data.query.filter_by(Rank=Rank).first():
+            flash('Please give a rating from 1 to 10 for an existing movie.', 'error')
+            return redirect(url_for('movie_page', Rank=Rank, username=username))
+        review = (review or '')[:5000]
         rating_review = RatingReview(user_id=user.id, movie_rank=Rank, rating=rating, review=review)
         db.session.add(rating_review)
         db.session.commit()
@@ -324,7 +339,7 @@ def search(username):
         genre_filters = [Movie_Data.Genre.ilike(f'%{genre}%') for genre in genres]
         query_base = query_base.filter(or_(*genre_filters))
 
-    if Rating:
+    if Rating and Rating.lstrip('-').isdigit():
         query_base = query_base.filter(Movie_Data.Rating >= int(Rating))
 
     # Filter products based on search query
@@ -395,7 +410,9 @@ def add_to_wishlist():
 
         # Get item ID from the form
         Rank = request.form.get('Rank')
-        #movie = Movie_Data.query.filter_by(Rank=Rank).first()
+        if not Rank or not str(Rank).isdigit() or not Movie_Data.query.filter_by(Rank=Rank).first():
+            flash('That movie does not exist.', 'error')
+            return redirect(url_for('dashboard', username=username))
 
         # Check if the item is already in the user's wishlist
         existing_wishlist_item = Wishlist.query.filter_by(user_id=user_id, movie_rank=Rank).first()
@@ -492,8 +509,11 @@ def prepare_payment(movie_title, username):
     date = request.args.get('date')
     if request.args.get('ticket_price') is None:
         return redirect(url_for('current_movies', username=username))
-    original_price = float(request.args.get('ticket_price'))
-    ticket_price = float(request.args.get('ticket_price'))  # Convert ticket_price to float
+    try:
+        original_price = float(request.args.get('ticket_price'))
+    except ValueError:
+        return redirect(url_for('current_movies', username=username))
+    ticket_price = original_price  # Convert ticket_price to float
     discounted_price = ticket_price  # Default to ticket_price
 
     # Retrieve user from database
@@ -546,7 +566,13 @@ def card_payment(movie_title, username):
 
         # Convert date from string to appropriate format
         from datetime import datetime
-        date = datetime.strptime(date, '%Y-%m-%d').date()
+        try:
+            date = datetime.strptime(date, '%Y-%m-%d').date()
+            ticket_price = float(ticket_price)
+        except (TypeError, ValueError):
+            abort(400)
+        if not hall.query.filter_by(Movie_Title=movie_title).first():
+            abort(404)
 
         # Create and add sold ticket to the database
         new_ticket = SoldTicket(username=username, movie_title=movie_title,
@@ -600,7 +626,13 @@ def mobile_payment(movie_title, username):
 
         # Convert date and time from string to appropriate formats
         from datetime import datetime
-        date = datetime.strptime(date, '%Y-%m-%d').date()
+        try:
+            date = datetime.strptime(date, '%Y-%m-%d').date()
+            ticket_price = float(ticket_price)
+        except (TypeError, ValueError):
+            abort(400)
+        if not hall.query.filter_by(Movie_Title=movie_title).first():
+            abort(404)
         #time = datetime.strptime(time, '%H:%M').time()'''
 
         # Create and add sold ticket to the database
@@ -755,6 +787,9 @@ def add_friend_to_db(friend_id):
         if friend:
             # Add the friend to the current user's friend list
             current_user = User.query.filter_by(username=current_username).first()
+            if friend.id == current_user.id or friend in current_user.friends:
+                flash('You are already friends, or that is you.', 'error')
+                return redirect(url_for('add_friend'))
             current_user.friends.append(friend)
             db.session.commit()
             flash('Friend added successfully!', 'success')
@@ -814,7 +849,7 @@ def remove_friend(friend_id):
         if current_user:
             # Retrieve the friend to be removed
             friend_to_remove = User.query.get(friend_id)
-            if friend_to_remove:
+            if friend_to_remove and friend_to_remove in current_user.friends:
                 # Remove the friend from the user's friend list
                 current_user.friends.remove(friend_to_remove)
                 db.session.commit()
@@ -890,8 +925,11 @@ def playlist_details(playlist_id):
 @app.route('/create_playlist', methods=['POST'])
 def create_playlist():
     # Create a new playlist
-    name = request.form.get('playlist_name')
+    name = (request.form.get('playlist_name') or '').strip()
     current_username = session.get('username')
+    if not name or len(name) > 255:
+        flash('Please give the playlist a name (up to 255 characters).', 'error')
+        return redirect(url_for('playlists', username=current_username))
     playlist = Playlist(name=name, username=current_username)
     db.session.add(playlist)
     db.session.commit()
@@ -908,6 +946,10 @@ def add_to_playlist():
     playlist = Playlist.query.get_or_404(playlist_id)
     if playlist.username != session.get('username'):
         abort(403)
+    if not str(movie_rank).isdigit() or not Movie_Data.query.filter_by(Rank=movie_rank).first():
+        abort(404)
+    if PlaylistItem.query.filter_by(playlist_id=playlist_id, movie_rank=movie_rank).first():
+        return redirect(url_for('playlist_details', playlist_id=playlist_id))
     playlist_item = PlaylistItem(playlist_id=playlist_id, movie_rank=movie_rank)
     db.session.add(playlist_item)
     db.session.commit()
