@@ -2,7 +2,7 @@ import os
 from app import app, db
 from app.auth import hash_secret, verify_secret
 from flask import render_template, request, redirect, url_for,flash,session,jsonify,abort
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from app.models import User, Movie_Data, Wishlist, UserPreferences, RatingReview, hall, Friendship,Hall_Details, Seat, SoldTicket, Voucher, user_vouchers, Playlist, PlaylistItem
 from sqlalchemy.sql import text,or_,func,desc
 from math import ceil 
@@ -628,7 +628,8 @@ def find_theatre(username):
 
 @app.route('/hall_details/<hall_name>/<username>')
 def hall_details(hall_name,username):
-    hall = Hall_Details.query.filter_by(hall_name=hall_name).first_or_404()
+    # some hosts pass the path on with %20 still in it; hall names never contain '%'
+    hall = Hall_Details.query.filter_by(hall_name=unquote(hall_name)).first_or_404()
     return render_template('hall_details.html', hall=hall,username=username)
 
 from datetime import datetime, timedelta

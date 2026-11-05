@@ -68,7 +68,7 @@ class UserPreferences(db.Model):
     genre = db.Column(db.String(50))  # Assuming maximum genre length is 50 characters
     director = db.Column(db.String(100))  # Assuming maximum director name length is 100 characters
     actor = db.Column(db.String(100))  # Assuming maximum actor name length is 100 characters
-    year = db.Column(db.Integer)  # Year preference
+    year = db.Column(db.String(20))  # Decade preference, e.g. '1990s'
     def __repr__(self):
         return f"<UserPreferences(user_name={self.user_name}, genre='{self.genre}', director='{self.director}', actor='{self.actor}', year={self.year})>"
 
@@ -107,7 +107,7 @@ class Seat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     movie_title = db.Column(db.String(255), db.ForeignKey('hall.Movie_Title'), nullable=False)
     seat_number = db.Column(db.String(10), nullable=False)
-    status = db.Column(db.String(10), nullable=False, default='available')  # 'available' or 'taken'
+    status = db.Column(db.String(20), nullable=False, default='available')  # 'available' or 'taken'
 
     def __repr__(self):
         return f"<Seat(movie_id={self.movie_id}, seat_number='{self.seat_number}', status='{self.status}')>"
