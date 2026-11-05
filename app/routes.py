@@ -520,6 +520,9 @@ def prepare_payment(movie_title, username):
         original_price = float(request.args.get('ticket_price'))
     except ValueError:
         return redirect(url_for('current_movies', username=username))
+    # the price on the page is for one seat; charge for every seat that was picked
+    seat_count = len([x for x in (selected_seats or '').split(',') if x.strip() and x != 'None'][:20]) or 1
+    original_price = original_price * seat_count
     ticket_price = original_price  # Convert ticket_price to float
     discounted_price = ticket_price  # Default to ticket_price
 
