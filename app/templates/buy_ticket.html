@@ -115,7 +115,7 @@
     </div>
     <div class="date-options">
         <p>Please choose a date:</p>
-        <input type="date" name="date" min="{{ movie.start_date }}" max="{{ movie.end_date }}">
+        <input type="date" name="date" min="{{ date_min }}" max="{{ date_max }}">
     </div>
     <form action="{{ url_for('prepare_payment', movie_title=movie.Movie_Title, username=username) }}" method="get">
         <p>Please select your seat:</p>

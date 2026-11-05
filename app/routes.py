@@ -471,6 +471,9 @@ def current_movies(username):
 
     # Query the database to get all movies that are currently showing
     current_movies = hall.query.filter(hall.start_date <= current_date, hall.end_date >= current_date).all()
+    if not current_movies:
+        # the bundled showtimes are from 2024; a demo should still let people book, so list every film
+        current_movies = hall.query.all()
 
     # Pass the current movies to the template for rendering
     return render_template('current_movies.html', username=username, current_movies=current_movies)
@@ -498,7 +501,11 @@ def buy_tickets(movie_title, username):
         else:
             # Handle no seat selected case
             print("No seats selected")
-    return render_template('buy_ticket.html', movie=movie, username=username, all_seats=all_seats)
+    today = datetime.now().date()
+    date_min = max(today, movie.start_date) if movie and movie.start_date else today
+    date_max = movie.end_date if movie and movie.end_date and movie.end_date >= date_min else date_min + timedelta(days=30)
+    return render_template('buy_ticket.html', movie=movie, username=username, all_seats=all_seats,
+                           date_min=date_min, date_max=date_max)
 
 
 @app.route('/prepare_payment/<movie_title>/<username>', methods=['GET'])
