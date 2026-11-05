@@ -544,6 +544,22 @@ def prepare_payment(movie_title, username):
                            date=date, ticket_price=discounted_price,original_price =original_price)
 
 
+def reserve_seats(movie_title, selected_seats):
+    """Mark the chosen seats taken. False if any is missing or already taken (nothing is changed then)."""
+    if not selected_seats or selected_seats == 'None':
+        return True
+    seats = []
+    for number in selected_seats.split(','):
+        seat = Seat.query.filter_by(movie_title=movie_title, seat_number=number.strip()).first()
+        if seat is None or seat.status != 'available':
+            return False
+        seats.append(seat)
+    for seat in seats:
+        seat.status = 'unavailable'
+    db.session.commit()
+    return True
+
+
 @app.route('/card_payment/<movie_title>/<username>', methods=['GET', 'POST'])
 def card_payment(movie_title, username):
     if request.method == 'GET':
@@ -580,6 +596,9 @@ def card_payment(movie_title, username):
             abort(400)
         if not hall.query.filter_by(Movie_Title=movie_title).first():
             abort(404)
+        if not reserve_seats(movie_title, selected_seats):
+            flash('Sorry, one of those seats was just taken. Please choose again.', 'error')
+            return redirect(url_for('buy_tickets', movie_title=movie_title, username=username))
 
         # Create and add sold ticket to the database
         new_ticket = SoldTicket(username=username, movie_title=movie_title,
@@ -640,6 +659,9 @@ def mobile_payment(movie_title, username):
             abort(400)
         if not hall.query.filter_by(Movie_Title=movie_title).first():
             abort(404)
+        if not reserve_seats(movie_title, selected_seats):
+            flash('Sorry, one of those seats was just taken. Please choose again.', 'error')
+            return redirect(url_for('buy_tickets', movie_title=movie_title, username=username))
         #time = datetime.strptime(time, '%H:%M').time()'''
 
         # Create and add sold ticket to the database
