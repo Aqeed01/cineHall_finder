@@ -43,12 +43,12 @@
         .stars label {
             display: inline-block;
             cursor: pointer;
-            font-size: 30px;
-            
+            font-size: 0; /* the star is drawn by :before; hide the label's own copy */
         }
 
         .stars label:before {
             content: "\2605"; /* Unicode star character */
+            font-size: 30px;
             color: #ddd;
             transition: color 0.3s ease; /* Added transition property */
         }

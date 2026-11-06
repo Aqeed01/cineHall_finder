@@ -359,10 +359,10 @@ def search(username):
     # Fetch unique genres and actors from the database
     genres = set()
     actors = set()
-    for movie in movies.items:
-        genres.update(movie.Genre.split(","))
-        actors.update(movie.Actors.split(", "))
-        actors.update(movie.Actors.split(","))
+    for genre_col, actor_col in db.session.query(Movie_Data.Genre, Movie_Data.Actors).all():
+        genres.update(g.strip() for g in (genre_col or '').split(',') if g.strip())
+        actors.update(a.strip() for a in (actor_col or '').split(',') if a.strip())
+    genres, actors = sorted(genres), sorted(actors)
 
     return render_template('show_movies.html',movies=movies, page=page, total_pages=total_pages, genres=genres, actors=actors, username=username)
 
@@ -423,6 +423,7 @@ def add_to_wishlist():
             wishlist_item = Wishlist(user_id=user_id, movie_rank=Rank)
             db.session.add(wishlist_item)
             db.session.commit()
+            flash('Added to your watchlist.', 'success')
 
         return redirect(url_for('movie_page', Rank=Rank, username=username))
 
