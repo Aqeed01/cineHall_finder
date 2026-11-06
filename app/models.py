@@ -187,6 +187,7 @@ class SoldTicket(db.Model):
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.Text, nullable=False)
     format = db.Column(db.String(50), nullable=False)  # Example formats: '2D', '3D', 'IMAX'
+    seats = db.Column(db.String(100))  # e.g. '7,8'
     
     user = relationship('User', backref='sold_tickets')
     movie = relationship('hall', backref='tickets_sold')

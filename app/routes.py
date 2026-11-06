@@ -606,7 +606,8 @@ def card_payment(movie_title, username):
 
         # Create and add sold ticket to the database
         new_ticket = SoldTicket(username=username, movie_title=movie_title,
-                                ticket_price=ticket_price, date=date, time=time, format=format)
+                                ticket_price=ticket_price, date=date, time=time, format=format,
+                                seats=(selected_seats if selected_seats and selected_seats != 'None' else None))
         db.session.add(new_ticket)
         db.session.commit()
 
@@ -670,7 +671,8 @@ def mobile_payment(movie_title, username):
 
         # Create and add sold ticket to the database
         new_ticket = SoldTicket(username=username, movie_title=movie_title,
-                                ticket_price=ticket_price, date=date, time=time, format=format)
+                                ticket_price=ticket_price, date=date, time=time, format=format,
+                                seats=(selected_seats if selected_seats and selected_seats != 'None' else None))
         db.session.add(new_ticket)
         db.session.commit()
 
